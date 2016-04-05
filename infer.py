@@ -30,11 +30,15 @@ fit the model). Maybe this demo should use multinomial emissions...
 ###############
 
 testcase = sys.argv[1]
-path = 'data/' + testcase + '/Goto-' + testcase + '-feature-state-ts.txt'
+if testcase == "mr":
+    path = 'data/' + testcase + '/frames_features.txt'
+else:
+    path = 'data/' + testcase + '/Goto-' + testcase + '-feature-state-ts.txt'
 
 # data = np.loadtxt(os.path.join(os.path.dirname(__file__),'MultiGoals-feature-state-ts.txt'))[:2500]
 data = np.loadtxt(os.path.join(os.path.dirname(__file__), path))
 # data = np.loadtxt(os.path.join(os.path.dirname(__file__),'LightKey-feature-state-ts.txt'))[:2500]
+print(data)
 mean = data.mean(axis=1)
 data = data - mean[:, np.newaxis]
 
@@ -46,13 +50,12 @@ data = data - mean[:, np.newaxis]
 Nmax = 10
 
 # Set iteration count
-ITERATIONS = 5000
+ITERATIONS = 20
 
 # and some hyperparameters
 obs_dim = data.shape[1]
 
 ## subHMMs
-
 Nsuper = 10
 Nsub = 10
 T = 1000
@@ -76,6 +79,7 @@ dur_hypparams = dict(
         beta_0=10,
         )
 
+""""
 
 true_obs_distnss = [[pyhsmm.distributions.Gaussian(**obs_hypparams) for substate in xrange(Nsub)]
         for superstate in xrange(Nsuper)]
@@ -128,6 +132,7 @@ plt.gcf().suptitle('subHSMM sampled model after {} iterations'.format(ITERATIONS
 plt.savefig('plots/' + testcase + '/subhmm.png')
 plt.close()
 s = model.states_list[0] 
+"""
 
 ### HDP-HMM without the sticky bias
 
@@ -152,7 +157,6 @@ obs_hypparams = {'mu_0':np.zeros(obs_dim),
                 'nu_0':obs_dim+5}
 dur_hypparams = {'alpha_0':2,
                  'beta_0':2}
-
 
 ### Sticky-HDP-HMM
 
