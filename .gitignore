@@ -1,2 +1,2 @@
-models.pyc
-states.pyc
+*.pyc
+.DS_Store
