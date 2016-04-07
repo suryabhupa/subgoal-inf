@@ -50,7 +50,7 @@ data = data - mean[:, np.newaxis]
 Nmax = 10
 
 # Set iteration count
-ITERATIONS = 20
+ITERATIONS = 40
 
 # and some hyperparameters
 obs_dim = data.shape[1]
