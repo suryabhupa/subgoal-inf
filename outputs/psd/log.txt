@@ -1,0 +1,29 @@
+2016-04-08 01:24:13[psd]:  [program started on Fri Apr  8 01:24:13 2016] 
+2016-04-08 01:24:13[psd]:  [command line arguments] 
+2016-04-08 01:24:13[psd]:  datafile http://torch7.s3-website-us-east-1.amazonaws.com/data/tr-berkeley-N5K-M56x56-lcn.ascii 
+2016-04-08 01:24:13[psd]:  seed 1 
+2016-04-08 01:24:13[psd]:  hessiansamples 500 
+2016-04-08 01:24:13[psd]:  rundir outputs/psd 
+2016-04-08 01:24:13[psd]:  minhessian 0.02 
+2016-04-08 01:24:13[psd]:  kernelsize 9 
+2016-04-08 01:24:13[psd]:  hessian true 
+2016-04-08 01:24:13[psd]:  model conv-psd 
+2016-04-08 01:24:13[psd]:  maxhessian 500 
+2016-04-08 01:24:13[psd]:  nfiltersout 16 
+2016-04-08 01:24:13[psd]:  nfiltersin 1 
+2016-04-08 01:24:13[psd]:  inputsize 25 
+2016-04-08 01:24:13[psd]:  statinterval 5000 
+2016-04-08 01:24:13[psd]:  hessianinterval 10000 
+2016-04-08 01:24:13[psd]:  lambda 1 
+2016-04-08 01:24:13[psd]:  eta 0.002 
+2016-04-08 01:24:13[psd]:  beta 1 
+2016-04-08 01:24:13[psd]:  momentum 0 
+2016-04-08 01:24:13[psd]:  etadecay 1e-05 
+2016-04-08 01:24:13[psd]:  maxiter 1000000 
+2016-04-08 01:24:13[psd]:  threads 2 
+2016-04-08 01:24:13[psd]:  dir outputs 
+2016-04-08 01:24:13[psd]:  v false 
+2016-04-08 01:24:13[psd]:  batchsize 1 
+2016-04-08 01:24:13[psd]:  wcar  
+2016-04-08 01:24:13[psd]:  display false 
+2016-04-08 01:24:13[psd]:  [----------------------] 
