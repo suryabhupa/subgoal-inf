@@ -27,7 +27,7 @@
 require 'unsup'
 require 'image'
 require 'optim'
--- require 'autoencoder-data'
+require 'autoencoder-data'
 
 ----------------------------------------------------------------------
 -- parse command-line options
@@ -43,7 +43,7 @@ cmd:option('-seed', 1, 'initial random seed')
 cmd:option('-threads', 2, 'threads')
 
 -- for all models:
-cmd:option('-model', 'conv-psd', 'auto-encoder class: linear | linear-psd | conv | conv-psd')
+cmd:option('-model', 'conv', 'auto-encoder class: linear | linear-psd | conv | conv-psd')
 cmd:option('-inputsize', 25, 'size of each input patch')
 cmd:option('-nfiltersin', 1, 'number of input convolutional filters')
 cmd:option('-nfiltersout', 16, 'number of output convolutional filters')
@@ -56,7 +56,7 @@ cmd:option('-momentum', 0, 'gradient momentum')
 cmd:option('-maxiter', 1000000, 'max number of updates')
 
 -- use hessian information for training:
-cmd:option('-hessian', true, 'compute diagonal hessian coefficients to condition learning rates')
+cmd:option('-hessian', false, 'compute diagonal hessian coefficients to condition learning rates')
 cmd:option('-hessiansamples', 500, 'number of samples to use to estimate hessian')
 cmd:option('-hessianinterval', 10000, 'compute diagonal hessian coefs at every this many samples')
 cmd:option('-minhessian', 0.02, 'min hessian to avoid extreme speed up')
@@ -67,7 +67,7 @@ cmd:option('-kernelsize', 9, 'size of convolutional kernels')
 
 -- logging:
 cmd:option('-datafile', 'http://torch7.s3-website-us-east-1.amazonaws.com/data/tr-berkeley-N5K-M56x56-lcn.ascii', 'Dataset URL')
-cmd:option('-statinterval', 5000, 'interval for saving stats and models')
+cmd:option('-statinterval', 2500, 'interval for saving stats and models')
 cmd:option('-v', false, 'be verbose')
 cmd:option('-display', false, 'display stuff')
 cmd:option('-wcar', '', 'additional flag to differentiate this run')
