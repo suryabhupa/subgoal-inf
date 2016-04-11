@@ -208,15 +208,17 @@ def main(_):
   # Creates graph from saved GraphDef.
   create_graph()
 
-  with open("frames/frame_list") as f:
+  with open("atari/exp1/frames_list.txt") as f:
       files = f.readlines() 
-  image = (FLAGS.image_file if FLAGS.image_file else
-           os.path.join(FLAGS.model_dir, 'cropped_panda.jpg'))
-  with open("frames_features.txt", "a+") as f:
+
+  # image = (FLAGS.image_file if FLAGS.image_file else
+           # os.path.join(FLAGS.model_dir, 'cropped_panda.jpg'))
+
+  with open("atari/exp1/frames_features.txt", "a+") as f:
       counter = 1
       total = len(files)
       for image_file in files:
-          image = "jpg-frames/" + image_file.rstrip() 
+          image = "atari/exp1/jpgs/" + image_file.rstrip() 
           features = run_inference_on_image(image)
           np.savetxt(f, features, '%5.8f', '\n', ' ') 
           f.write("\n")

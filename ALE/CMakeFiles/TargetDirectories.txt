@@ -1,0 +1,5 @@
+/Users/surya/Downloads/ALE/CMakeFiles/ale-bin.dir
+/Users/surya/Downloads/ALE/CMakeFiles/ale-c-lib.dir
+/Users/surya/Downloads/ALE/CMakeFiles/ale-lib.dir
+/Users/surya/Downloads/ALE/CMakeFiles/sharedLibraryInterfaceExample.dir
+/Users/surya/Downloads/ALE/CMakeFiles/videoRecordingExample.dir

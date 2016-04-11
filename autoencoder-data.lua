@@ -52,6 +52,7 @@ function getdata(datafile, inputsize, std)
                                        dsample:copy(sample)
                                        return {dsample,dsample,im}
                                     end})
+	 print(dataset)
    return dataset
 end
 

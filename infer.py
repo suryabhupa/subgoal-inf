@@ -32,6 +32,8 @@ fit the model). Maybe this demo should use multinomial emissions...
 testcase = sys.argv[1]
 if testcase == "mr":
     path = 'data/' + testcase + '/frames_features.txt'
+elif testcase == "mr2":
+    path = 'atari/exp1/frames_features.txt'
 else:
     path = 'data/' + testcase + '/Goto-' + testcase + '-feature-state-ts.txt'
 
@@ -50,7 +52,7 @@ data = data - mean[:, np.newaxis]
 Nmax = 10
 
 # Set iteration count
-ITERATIONS = 40
+ITERATIONS = 50
 
 # and some hyperparameters
 obs_dim = data.shape[1]
