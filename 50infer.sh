@@ -1,6 +1,6 @@
 #!/bin/bash
-python infer.py mr2
-sendmail "mr2 done!" surya95@gmail.com
+python 50infer.py mr2
+sendmail "50-mr2 done!" surya95@gmail.com
 # python infer.py large-triangle > run1.out
 # mail -s "large-triangle done" surya95@gmail.com < run1.out
 # python infer.py line > run2.out

@@ -52,7 +52,7 @@ data = data - mean[:, np.newaxis]
 Nmax = 10
 
 # Set iteration count
-ITERATIONS = 1
+ITERATIONS = 100
 
 # and some hyperparameters
 obs_dim = data.shape[1]
@@ -148,7 +148,7 @@ for idx in progprint_xrange(ITERATIONS):
 
 posteriormodel.plot()
 plt.gcf().suptitle('HDP-HMM sampled model after {} iterations'.format(ITERATIONS))
-plt.savefig('plots/' + testcase + '/hdp-hmm.png')
+plt.savefig('plots/' + testcase + '/100-hdp-hmm.png')
 plt.close() 
 
 # Some more hypparams
@@ -173,7 +173,7 @@ for idx in progprint_xrange(ITERATIONS):
 
 posteriormodel.plot()
 plt.gcf().suptitle('Sticky HDP-HMM sampled model after {} iterations'.format(ITERATIONS))
-plt.savefig('plots/' + testcase + '/sticky-hdp-hmm.png')
+plt.savefig('plots/' + testcase + '/100-sticky-hdp-hmm.png')
 plt.close()
 
 '''
@@ -199,7 +199,7 @@ for idx in progprint_xrange(ITERATIONS):
 
 posteriormodel.plot()
 plt.gcf().suptitle('HDP-HSMM sampled model after {} iterations'.format(ITERATIONS))
-plt.savefig('plots/' + testcase + '/hdp-hsmm.png')
+plt.savefig('plots/' + testcase + '/100-hdp-hsmm.png')
 plt.close() 
 
 
