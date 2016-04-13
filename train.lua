@@ -58,17 +58,38 @@ function define_criterion()
 	print('==> define loss')
 end
 
-function get_action_data(filename)
+function get_action_data(file)
+	-- read in the acations in the file, line by line
+	data = {}
+	io.input(file)
+	while true do
+		local line = io.read()
+		if line == nil then break end
+			table.insert(data, tonumber(line))
+	end
+	return data
+end
+
+function get_frame_data(dir)
+	-- get all *.png files in the directory and sort them
+	files = {}
+	for file in paths.files(dir) do
+		if file:find("png$") then
+			table.insert(files, paths.concat(dir, file))
+		end
+	end 
+	table.sort(files, function (a,b) return a < b end) 
 	
+	return files
 end
 
-function get_frame_data(filename)
+function make_training_data(action_data_file, frame_data_dir)
+	a_data = get_action_data(action_data_file)
+	f_data = get_frame_data(frame_data_dir)
 
-end
-
-function make_training_data(dir)
-	-- image.load(xxxxxx.png) yields a 3x210x320 image
-
+	print(a_data)
+	print(f_data)
+	return {a_data, f_data}
 end
 
 function test(model)
@@ -77,9 +98,7 @@ end
 
 function main()
 	model = create_model()
-	training_data = make_training_data()
-
-	-- training of autoencoder here
+	training_data = make_training_data("ALE/doc/examples/record/game_actions.txt", "ALE/doc/examples/record/")
 
 	model:training() -- put into training mode (dropout turns on)
 
