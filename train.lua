@@ -54,59 +54,92 @@ function create_model()
 
 end
 
-function define_criterion()
-	print('==> define loss')
+function tablelength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
 end
 
 function get_action_data(file)
 	-- read in the acations in the file, line by line
+	print("==> getting action data")
 	data = {}
-	io.input(file)
+
+	-- open file, check for errors
+	fh, err = io.open(file) 
+	if err then print("Error in opening file: " .. file) return end 
+
+	-- loop while there are lines in the file
 	while true do
-		local line = io.read()
+		-- read line, break if nil
+		local line = fh:read()
 		if line == nil then break end
-			table.insert(data, tonumber(line))
+
+		-- each line is a string like "1 0 0 0 0 0 0"
+		-- need to split string by space, and then concat to table
+		-- then convert table to tensor, and add to overall data table
+		inp = {}
+		for i in string.gmatch(line, "%d") do
+			table.insert(inp, tonumber(i))
+		end
+		table.insert(data, torch.Tensor(inp))
 	end
 	return data
 end
 
 function get_frame_data(dir)
 	-- get all *.png files in the directory and sort them
+	print("==> getting frame data")
 	files = {}
 	for file in paths.files(dir) do
 		if file:find("png$") then
+			-- note that this only appends the *filenames* to the table, not the actual images
 			table.insert(files, paths.concat(dir, file))
 		end
 	end 
+
 	table.sort(files, function (a,b) return a < b end) 
 	
 	return files
 end
 
 function make_training_data(action_data_file, frame_data_dir)
+	print("==> preparing dataset")
 	a_data = get_action_data(action_data_file)
 	f_data = get_frame_data(frame_data_dir)
 
-	print(a_data)
-	print(f_data)
 	return {a_data, f_data}
 end
 
 function test(model)
-
+	
 end
 
 function main()
+	print("==> starting main")
 	model = create_model()
 	training_data = make_training_data("ALE/doc/examples/record/game_actions.txt", "ALE/doc/examples/record/")
+	a_data = training_data[1]
+	f_data = training_data[2]
 
 	model:training() -- put into training mode (dropout turns on)
+	-- criterion = nn.MSECriterion()
 
-	i = image.load("atari/exp1/000000.png")
-	j = torch.rand(9)
+	for j = 1,100 do
+		-- one less than the last entry, because we compare to next element
+		for i = 1,10867 do
+			-- input = {a_data[i], image.load(f_data[i])}
+			-- output = {image.load(f_data[(i+1)])}
 
-	print(model:forward{j, i})
-	print(i:size()) 
+			-- criterion:forward(model:forward(input), output)
+			-- model:zeroGradParameters()
+			-- model:backward(input, criterion:backward(model.output, output))
+			-- model:updateParameters(0.01) 
+		end
+	end
+
+	-- torch.save("cps/" .. os.time .. ".dat", model)
+	-- torch.save("cps/" .. "1" .. ".dat", model)
 end
 
 main()
