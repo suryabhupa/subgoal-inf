@@ -7,7 +7,7 @@ require 'image'
 
 noutputs = 50
 
-nfeats = 3
+nfeats = 3 -- because image is RGB
 width = 210
 height = 320
 ninputs = nfeats*width*height
@@ -18,9 +18,7 @@ filtsize = 5
 poolsize = 2 
 
 function create_model()
-	print('==> creating model')
-	local model = nn.Sequential()
-
+  --  CNN
 	local convnet = nn.Sequential()
 	convnet:add(nn.SpatialConvolution(nfeats, nstates[1], filtsize, filtsize))
 	convnet:add(nn.ReLU())
@@ -37,18 +35,46 @@ function create_model()
 	convnet:add(nn.ReLU())
 	convnet:add(nn.Linear(nstates[3], noutputs)) 
 
+  -- One-hot encoding
 	local onehot = nn.Sequential()
 	onehot:add(nn.Linear(9, 9)) 
 
+  -- ParallelTable 
 	local parallel = nn.ParallelTable()
 	parallel:add(onehot)
 	parallel:add(convnet)
 
+  nc = 3
+  dstates = 100
+  genfilters = 64
+
+  -- Deconvolution
+  local decnet = nn.Sequential()
+  -- input to convolution
+  decnet:add(nn.SpatialFullConvolution(dstates, genfilters * 8, 4, 4))
+  decnet:add(nn.SpatialBatchNormalization(genfilters * 8)):add(ReLU(true))
+  -- state size: (genfilters*8) x 4 x 4
+  decnet:add(nn.SpatialFullConvolution(genfilters * 8, genfilters * 4, 4, 4, 2, 2, 1, 1))
+  decnet:add(nn.SpatialBatchNormalization(genfilters * 4)):add(nn.ReLU(true))
+  -- state size: (genfilters*4) x 8 x 8
+  decnet:add(nn.SpatialFullConvolution(genfilters * 4, genfilters * 2, 4, 4, 2, 2, 1, 1))
+  decnet:add(nn.SpatialBatchNormalization(genfilters * 2)):add(nn.ReLU(true))
+  -- state size: (genfilters*2) x 16 x 16
+  decnet:add(nn.SpatialFullConvolution(genfilters * 2, genfilters, 4, 4, 2, 2, 1, 1))
+  decnet:add(nn.SpatialBatchNormalization(genfilters)):add(nn.ReLU(true))
+  -- state size: (genfilters) x 32 x 32
+  decnet:add(nn.SpatialFullConvolution(genfilters, nc, 4, 4, 2, 2, 1, 1))
+  decnet:add(nn.Tanh())
+
+  --TODO: connect back into an image
+
+	print('==> creating model')
+	local model = nn.Sequential()
 	model:add(parallel)
 	model:add(nn.JoinTable(1))
+  model:add(decnet)
 
 	-- Add more layers here for deconvolution
-
 	print(model)
 	return model
 
@@ -118,6 +144,7 @@ end
 function main()
 	print("==> starting main")
 	model = create_model()
+	-- training of autoencoder here
 	training_data = make_training_data("ALE/doc/examples/record/game_actions.txt", "ALE/doc/examples/record/")
 	a_data = training_data[1]
 	f_data = training_data[2]
@@ -139,7 +166,7 @@ function main()
 	end
 
 	-- torch.save("cps/" .. os.time .. ".dat", model)
-	-- torch.save("cps/" .. "1" .. ".dat", model)
+	-- torch.save("cps/" .. "1" .. ".dat", model) 
 end
 
 main()
