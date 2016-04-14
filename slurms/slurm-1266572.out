@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "infer.py", line 151, in <module>
+    plt.savefig('plots/' + testcase + '/hdp-hmm.png')
+  File "/home/surya/anaconda/lib/python2.7/site-packages/matplotlib/pyplot.py", line 577, in savefig
+    res = fig.savefig(*args, **kwargs)
+  File "/home/surya/anaconda/lib/python2.7/site-packages/matplotlib/figure.py", line 1476, in savefig
+    self.canvas.print_figure(*args, **kwargs)
+  File "/home/surya/anaconda/lib/python2.7/site-packages/matplotlib/backend_bases.py", line 2211, in print_figure
+    **kwargs)
+  File "/home/surya/anaconda/lib/python2.7/site-packages/matplotlib/backends/backend_agg.py", line 526, in print_png
+    filename_or_obj = open(filename_or_obj, 'wb')
+IOError: [Errno 2] No such file or directory: 'plots/mr2/hdp-hmm.png'

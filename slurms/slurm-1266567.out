@@ -1,0 +1,2 @@
+slurmstepd: Job 1266567 exceeded memory limit (2141256 > 2097152), being killed
+slurmstepd: *** JOB 1266567 ON node002 CANCELLED AT 2016-04-11T18:19:11 ***
