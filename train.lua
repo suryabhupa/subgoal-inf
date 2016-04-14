@@ -52,7 +52,7 @@ function create_model()
   local decnet = nn.Sequential()
   -- input to convolution
   decnet:add(nn.SpatialFullConvolution(dstates, genfilters * 8, 4, 4))
-  decnet:add(nn.SpatialBatchNormalization(genfilters * 8)):add(ReLU(true))
+  decnet:add(nn.SpatialBatchNormalization(genfilters * 8)):add(nn.ReLU(true))
   -- state size: (genfilters*8) x 4 x 4
   decnet:add(nn.SpatialFullConvolution(genfilters * 8, genfilters * 4, 4, 4, 2, 2, 1, 1))
   decnet:add(nn.SpatialBatchNormalization(genfilters * 4)):add(nn.ReLU(true))
@@ -150,18 +150,19 @@ function main()
 	f_data = training_data[2]
 
 	model:training() -- put into training mode (dropout turns on)
-	-- criterion = nn.MSECriterion()
+	criterion = nn.BCECriterion()
 
 	for j = 1,100 do
 		-- one less than the last entry, because we compare to next element
 		for i = 1,10867 do
-			-- input = {a_data[i], image.load(f_data[i])}
-			-- output = {image.load(f_data[(i+1)])}
+			input = {a_data[i], image.load(f_data[i])}
+			output = {image.load(f_data[(i+1)])}
+			print("processing image " .. i)
 
-			-- criterion:forward(model:forward(input), output)
-			-- model:zeroGradParameters()
-			-- model:backward(input, criterion:backward(model.output, output))
-			-- model:updateParameters(0.01) 
+			criterion:forward(model:forward(input), output)
+			model:zeroGradParameters()
+			model:backward(input, criterion:backward(model.output, output))
+			model:updateParameters(0.01) 
 		end
 	end
 
