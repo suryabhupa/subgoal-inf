@@ -37,25 +37,33 @@ function create_model()
 
   -- One-hot encoding
 	local onehot = nn.Sequential()
-	onehot:add(nn.Linear(9, 9)) 
+	onehot:add(nn.Linear(9, 10)) 
 
   -- ParallelTable 
 	local parallel = nn.ParallelTable()
 	parallel:add(onehot)
 	parallel:add(convnet)
 
+  -- Deconvolution
   nc = 3
   dstates = 100
   genfilters = 64
 
-  -- Deconvolution
   local decnet = nn.Sequential()
   -- input to convolution
-  decnet:add(nn.SpatialFullConvolution(dstates, genfilters * 8, 4, 4))
-  decnet:add(nn.SpatialBatchNormalization(genfilters * 8)):add(ReLU(true))
+  decnet:add(nn.SpatialFullConvolution(1, 2, 8, 5, 8, 5))
+  decnet:add(nn.ReLU(true))
+  --decnet:add(nn.SpatialBatchNormalization(3)):add(nn.ReLU(true))
+
   -- state size: (genfilters*8) x 4 x 4
-  decnet:add(nn.SpatialFullConvolution(genfilters * 8, genfilters * 4, 4, 4, 2, 2, 1, 1))
+  
+  decnet:add(nn.SpatialFullConvolution(2, 3, 4, 7, 4, 7))
+  decnet:add(nn.ReLU(true))
+  --decnet:add(nn.SpatialBatchNormalization(3)):add(nn.ReLU(true))
+
+  --[[
   decnet:add(nn.SpatialBatchNormalization(genfilters * 4)):add(nn.ReLU(true))
+ 
   -- state size: (genfilters*4) x 8 x 8
   decnet:add(nn.SpatialFullConvolution(genfilters * 4, genfilters * 2, 4, 4, 2, 2, 1, 1))
   decnet:add(nn.SpatialBatchNormalization(genfilters * 2)):add(nn.ReLU(true))
@@ -64,16 +72,18 @@ function create_model()
   decnet:add(nn.SpatialBatchNormalization(genfilters)):add(nn.ReLU(true))
   -- state size: (genfilters) x 32 x 32
   decnet:add(nn.SpatialFullConvolution(genfilters, nc, 4, 4, 2, 2, 1, 1))
-  decnet:add(nn.Tanh())
+  --]]
+  --decnet:add(nn.Tanh())
 
   --TODO: connect back into an image
 
 	print('==> creating model')
 	local model = nn.Sequential()
 	model:add(parallel)
-	model:add(nn.JoinTable(1))
-  model:add(decnet)
-
+	model:add(nn.JoinTable(1)) -- 60x1
+  model:add(nn.Reshape(1,6,10)) -- 1x6x10
+  model:add(decnet) -- 3x210x320
+  
 	-- Add more layers here for deconvolution
 	print(model)
 	return model
@@ -113,8 +123,8 @@ function make_training_data(action_data_file, frame_data_dir)
 	a_data = get_action_data(action_data_file)
 	f_data = get_frame_data(frame_data_dir)
 
-	print(a_data)
-	print(f_data)
+  --print(a_data)
+	--print(f_data)
 	return {a_data, f_data}
 end
 
