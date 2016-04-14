@@ -17,6 +17,17 @@ dims = {49, 77}
 filtsize = 5
 poolsize = 2 
 
+function weights_init(m)
+   local name = torch.type(m)
+   if name:find('Convolution') then
+      m.weight:normal(0.0, 0.02)
+      m.bias:fill(0)
+   elseif name:find('BatchNormalization') then
+      if m.weight then m.weight:normal(1.0, 0.02) end
+      if m.bias then m.bias:fill(0) end
+   end
+end	
+
 function create_model()
   --  CNN
 	local convnet = nn.Sequential()
@@ -34,6 +45,8 @@ function create_model()
 	convnet:add(nn.Linear(nstates[2]*dims[1]*dims[2], nstates[3]))
 	convnet:add(nn.ReLU())
 	convnet:add(nn.Linear(nstates[3], noutputs)) 
+
+  convnet:apply(weights_init)
 
   -- One-hot encoding
 	local onehot = nn.Sequential()
@@ -57,6 +70,8 @@ function create_model()
   decnet:add(nn.SpatialFullConvolution(2, 3, 4, 7, 4, 7))
   decnet:add(nn.ReLU(true))
 
+  decnet:apply(weights_init)
+
   --TODO: connect back into an image
 
 	print('==> creating model')
@@ -65,6 +80,7 @@ function create_model()
 	model:add(nn.JoinTable(1)) -- 60x1
   model:add(nn.Reshape(1,6,10)) -- 1x6x10
   model:add(decnet) -- 3x210x320
+  model:add(nn.Sigmoid())
   
 	-- Add more layers here for deconvolution
 	print(model)
@@ -105,6 +121,7 @@ function get_action_data(file)
 	return data
 end
 
+-- Loads frame filenames into a table.
 function get_frame_data(dir)
 	-- get all *.png files in the directory and sort them
 	print("==> getting frame data")
@@ -117,10 +134,10 @@ function get_frame_data(dir)
 	end 
 
 	table.sort(files, function (a,b) return a < b end) 
-	
 	return files
 end
 
+-- Loads action and frame data into tables
 function make_training_data(action_data_file, frame_data_dir)
 	print("==> preparing dataset")
 	a_data = get_action_data(action_data_file)
@@ -132,8 +149,8 @@ function make_training_data(action_data_file, frame_data_dir)
 end
 
 function test(model)
-	
 end
+
 
 function main()
 	print("==> starting main")
@@ -146,39 +163,26 @@ function main()
 	model:training() -- put into training mode (dropout turns on)
 	criterion = nn.BCECriterion()
 
-	for j = 1,100 do
+	for epoch = 1,100 do
 		-- one less than the last entry, because we compare to next element
-		for i = 1,10867 do
-			input = {a_data[i], image.load(f_data[i])}
-			output = {image.load(f_data[(i+1)])}
-			print("processing image " .. i)
+		for n_iter = 1,10867 do
+			input = {a_data[n_iter], image.load(f_data[n_iter])}
+			output = image.load(f_data[(n_iter+1)])
+      output = nn.Sigmoid():forward(output)
+			print("processing image " .. n_iter)
+      
 
-			criterion:forward(model:forward(input), output)
+		 	local loss = criterion:forward(model:forward(input), output)
+      print(loss)
+
 			model:zeroGradParameters()
 			model:backward(input, criterion:backward(model.output, output))
 			model:updateParameters(0.01) 
 		end
 	end
 
-	-- torch.save("cps/" .. os.time .. ".dat", model)
-	-- torch.save("cps/" .. "1" .. ".dat", model) 
+	torch.save("cps/model-" .. epoch .. ".dat", model)
 end
 
 main()
-
---[[
-if opt.visualize then
-   if opt.model == 'convnet' then
-      if itorch then
-	 print '==> visualizing ConvNet filters'
-	 print('Layer 1 filters:')
-	 itorch.image(model:get(1).weight)
-	 print('Layer 2 filters:')
-	 itorch.image(model:get(5).weight)
-      else
-	 print '==> To visualize filters, start the script in itorch notebook'
-      end
-   end
-end
---]]
 
