@@ -4,7 +4,7 @@ require 'nnx'
 require 'optim'
 require 'xlua'
 require 'image'
-require 'cutorch'
+-- require 'cutorch'
 
 noutputs = 50
 
@@ -12,6 +12,8 @@ nfeats = 3 -- because image is RGB
 width = 210
 height = 320
 ninputs = nfeats*width*height
+cuda = true
+prevModel = nil
 
 nstates = {64, 64, 128}
 dims = {49, 77}
@@ -30,6 +32,9 @@ function weights_init(m)
 end	
 
 function create_model()
+	if prevModel then
+		return -- TODO
+	end
   --  CNN
 	local convnet = nn.Sequential()
 	convnet:add(nn.SpatialConvolution(nfeats, nstates[1], filtsize, filtsize))
@@ -85,7 +90,10 @@ function create_model()
   
 	-- Add more layers here for deconvolution
 	print(model)
-	return model:cuda()
+	if cuda then
+		model:cuda()
+	end
+	return model
 
 end
 
@@ -142,20 +150,24 @@ end
 function make_training_data(action_data_file, frame_data_dir)
 	print("==> preparing dataset")
 	a_data = get_action_data(action_data_file)
-	f_data = get_frame_data(frame_data_dir)
+	-- f_data = get_frame_data(frame_data_dir)
 
   --print(a_data)
 	--print(f_data)
-	return {a_data, f_data}
+	return {a_data, {} }
 end
 
 function test(model)
+	-- TODO
 end
 
 
 function main()
 	print("==> starting main")
-	cutorch.setDevice(1)
+	if cuda then
+		cutorch.setDevice(1)
+	end
+
 	model = create_model()
 	-- training of autoencoder here
 	training_data = make_training_data("ALE/doc/examples/record/game_actions.txt", "ALE/doc/examples/record/")
@@ -163,11 +175,16 @@ function main()
 	f_data = training_data[2]
 
 	model:training() -- put into training mode (dropout turns on)
-	criterion = nn.BCECriterion():cuda()
+	criterion = nn.BCECriterion()
+	if cuda then
+		criterion = criterion:cuda()
+	end
+
 	local time = sys.clock
-	trsize = 10867
+	trsize = 50
 	n_epoch = 100
 	batchSize = 10
+
 	shuffle = torch.randperm(trsize)
 
 	adamOptimState = {
@@ -179,36 +196,43 @@ function main()
 		 parameters,gradParameters = model:getParameters()
 	end
 
+	print("==> begin training")
 	-- training!!
 
 	for epoch = 1,n_epoch do
+		print("EPOCH " .. epoch)
 		-- one less than the last entry, because we compare to next element
 		for t = 1,trsize,batchSize do
 
 			xlua.progress(t, trsize)
 
 			-- prep for minibatches
-			local inputs = {}
-			local targets = {}
+			inputs = {}
+			targets = {}
 
 			-- add minibatches
 			for i = t,math.min(t+batchSize-1,trsize) do
-				print("processing image " .. t)
-				input = {a_data[shuffle[i]]:cuda(), image.load(f_data[shuffle[i]]):cuda()}
-				target = nn.Sigmoid():forward(image.load(f_data[shuffle[i]+1]):cuda())
+				input_filename = "ALE/doc/examples/record/" .. string.format("%06d", shuffle[i]) .. ".png"
+				target_filename = "ALE/doc/examples/record/" .. string.format("%06d", shuffle[i]+1) .. ".png"
+				input = {a_data[shuffle[i]], image.load(input_filename)}
+				target = nn.Sigmoid():forward(image.load(target_filename))
+				if cuda then
+					input = input:cuda()
+					target = target:cuda()
+				end
 				table.insert(inputs, input)
 				table.insert(targets, target) 
 			end 
 
 			-- add closure to evaluate f(X) and df/dX (https://github.com/torch/tutorials/blob/master/2_supervised/4_train.lua)
+			-- closure magic
 			feval = function(x)
 				gradParameters:zero()
 				local f = 0
 				for i = 1,#inputs do
 					local output = model:forward(inputs[i])
 					local err = criterion:forward(output, targets[i])
-					f = f + err
-
+					f = f + err 
 					local df_do = criterion:backward(output, targets[i])
 					model:backward(inputs[i], df_do)
 				end
@@ -216,15 +240,15 @@ function main()
 				gradParameters:div(#inputs)
 				f = f/#inputs
 
-				print("loss: " .. f)
+				print("\nloss: " .. f)
 				return f,gradParameters 
 			end 
 
 			optim.adam(feval, parameters, adamOptimState) 
 		end
+		torch.save("cps/model-" .. epoch .. ".dat", model)
 	end
 
-	torch.save("cps/model-" .. epoch .. ".dat", model)
 end
 
 main()
