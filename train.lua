@@ -4,6 +4,7 @@ require 'nnx'
 require 'optim'
 require 'xlua'
 require 'image'
+require 'cutorch'
 
 noutputs = 50
 
@@ -84,7 +85,7 @@ function create_model()
   
 	-- Add more layers here for deconvolution
 	print(model)
-	return model
+	return model:cuda()
 
 end
 
@@ -154,6 +155,7 @@ end
 
 function main()
 	print("==> starting main")
+	cutorch.setDevice(1)
 	model = create_model()
 	-- training of autoencoder here
 	training_data = make_training_data("ALE/doc/examples/record/game_actions.txt", "ALE/doc/examples/record/")
@@ -161,23 +163,64 @@ function main()
 	f_data = training_data[2]
 
 	model:training() -- put into training mode (dropout turns on)
-	criterion = nn.BCECriterion()
+	criterion = nn.BCECriterion():cuda()
+	local time = sys.clock
+	trsize = 10867
+	n_epoch = 100
+	batchSize = 10
+	shuffle = torch.randperm(trsize)
 
-	for epoch = 1,100 do
+	adamOptimState = {
+		lr = 0.002, 	-- parameters for adam
+		beta1 = 0.5 -- parameters for adam
+	}
+
+	if model then
+		 parameters,gradParameters = model:getParameters()
+	end
+
+	-- training!!
+
+	for epoch = 1,n_epoch do
 		-- one less than the last entry, because we compare to next element
-		for n_iter = 1,10867 do
-			input = {a_data[n_iter], image.load(f_data[n_iter])}
-			output = image.load(f_data[(n_iter+1)])
-      output = nn.Sigmoid():forward(output)
-			print("processing image " .. n_iter)
-      
+		for t = 1,trsize,batchSize do
 
-		 	local loss = criterion:forward(model:forward(input), output)
-      print(loss)
+			xlua.progress(t, trsize)
 
-			model:zeroGradParameters()
-			model:backward(input, criterion:backward(model.output, output))
-			model:updateParameters(0.01) 
+			-- prep for minibatches
+			local inputs = {}
+			local targets = {}
+
+			-- add minibatches
+			for i = t,math.min(t+batchSize-1,trsize) do
+				print("processing image " .. t)
+				input = {a_data[shuffle[i]]:cuda(), image.load(f_data[shuffle[i]]):cuda()}
+				target = nn.Sigmoid():forward(image.load(f_data[shuffle[i]+1]):cuda())
+				table.insert(inputs, input)
+				table.insert(targets, target) 
+			end 
+
+			-- add closure to evaluate f(X) and df/dX (https://github.com/torch/tutorials/blob/master/2_supervised/4_train.lua)
+			feval = function(x)
+				gradParameters:zero()
+				local f = 0
+				for i = 1,#inputs do
+					local output = model:forward(inputs[i])
+					local err = criterion:forward(output, targets[i])
+					f = f + err
+
+					local df_do = criterion:backward(output, targets[i])
+					model:backward(inputs[i], df_do)
+				end
+
+				gradParameters:div(#inputs)
+				f = f/#inputs
+
+				print("loss: " .. f)
+				return f,gradParameters 
+			end 
+
+			optim.adam(feval, parameters, adamOptimState) 
 		end
 	end
 
