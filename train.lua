@@ -4,9 +4,9 @@ require 'nnx'
 require 'optim'
 require 'xlua'
 require 'image'
--- require 'cutorch'
+require 'cunn'
 
-noutputs = 50
+noutputs = 51
 
 nfeats = 3 -- because image is RGB
 width = 210
@@ -14,8 +14,17 @@ height = 320
 ninputs = nfeats*width*height
 cuda = true
 prevModel = nil
+trsize = 100 -- 10866
+n_epoch = 20
+batchSize = 10 
+-- dir = "atari/exp1/"
+dir = "ALE/doc/examples/record/"
 
-nstates = {64, 64, 128}
+if cuda then
+	require 'cutorch'
+end
+
+nstates = {3, 3, 5000, 2000, 500, 100}
 dims = {49, 77}
 filtsize = 5
 poolsize = 2 
@@ -50,13 +59,22 @@ function create_model()
 	convnet:add(nn.Dropout(0.5))
 	convnet:add(nn.Linear(nstates[2]*dims[1]*dims[2], nstates[3]))
 	convnet:add(nn.ReLU())
-	convnet:add(nn.Linear(nstates[3], noutputs)) 
+
+	convnet:add(nn.Dropout(0.5))
+	convnet:add(nn.Linear(nstates[3], nstates[4]))
+	convnet:add(nn.ReLU())
+
+	--- convnet:add(nn.Dropout(0.5))
+	--- convnet:add(nn.Linear(nstates[4], nstates[5]))
+	--- convnet:add(nn.ReLU())
+
+	convnet:add(nn.Linear(nstates[4], noutputs)) 
 
   convnet:apply(weights_init)
 
   -- One-hot encoding
 	local onehot = nn.Sequential()
-	onehot:add(nn.Linear(9, 10)) 
+	onehot:add(nn.Identity()) 
 
   -- ParallelTable 
 	local parallel = nn.ParallelTable()
@@ -86,10 +104,11 @@ function create_model()
 	model:add(nn.JoinTable(1)) -- 60x1
   model:add(nn.Reshape(1,6,10)) -- 1x6x10
   model:add(decnet) -- 3x210x320
-  model:add(nn.Sigmoid())
+  -- model:add(nn.Sigmoid())
   
 	-- Add more layers here for deconvolution
 	print(model)
+	-- os.exit()
 	if cuda then
 		model:cuda()
 	end
@@ -170,26 +189,23 @@ function main()
 
 	model = create_model()
 	-- training of autoencoder here
-	training_data = make_training_data("ALE/doc/examples/record/game_actions.txt", "ALE/doc/examples/record/")
+	training_data = make_training_data(dir .. "game_actions.txt", dir)
 	a_data = training_data[1]
 	f_data = training_data[2]
 
 	model:training() -- put into training mode (dropout turns on)
-	criterion = nn.BCECriterion()
+	criterion = nn.SmoothL1Criterion()
 	if cuda then
 		criterion = criterion:cuda()
 	end
 
 	local time = sys.clock
-	trsize = 50
-	n_epoch = 100
-	batchSize = 10
 
 	shuffle = torch.randperm(trsize)
 
 	adamOptimState = {
-		lr = 0.002, 	-- parameters for adam
-		beta1 = 0.5 -- parameters for adam
+		lr = 0.05, 	-- parameters for adam
+		beta1 = 0.1 -- parameters for adam
 	}
 
 	if model then
@@ -212,13 +228,16 @@ function main()
 
 			-- add minibatches
 			for i = t,math.min(t+batchSize-1,trsize) do
-				input_filename = "ALE/doc/examples/record/" .. string.format("%06d", shuffle[i]) .. ".png"
-				target_filename = "ALE/doc/examples/record/" .. string.format("%06d", shuffle[i]+1) .. ".png"
-				input = {a_data[shuffle[i]], image.load(input_filename)}
-				target = nn.Sigmoid():forward(image.load(target_filename))
+				input_filename = dir .. string.format("%06d", shuffle[i]) .. ".png"
+				target_filename = dir .. string.format("%06d", shuffle[i]+1) .. ".png"
 				if cuda then
-					input = input:cuda()
-					target = target:cuda()
+					input = {a_data[shuffle[i]]:cuda(), image.load(input_filename):cuda()}
+					target = image.load(target_filename):cuda()
+					-- sig = nn.Sigmoid():cuda() -- not necessary.
+					-- target = sig:forward(target)
+				else 
+					input = {a_data[shuffle[i]], image.load(input_filename)}
+					target = image.load(target_filename)
 				end
 				table.insert(inputs, input)
 				table.insert(targets, target) 
@@ -246,6 +265,13 @@ function main()
 
 			optim.adam(feval, parameters, adamOptimState) 
 		end
+
+		inp_img = image.load(dir .. string.format("%06d", 100) .. ".png"):cuda()
+		inp_act = a_data[100]:cuda()
+
+		image.save("expected.png", model:forward{inp_act, inp_img}) 
+		os.exit()
+
 		torch.save("cps/model-" .. epoch .. ".dat", model)
 	end
 
